@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <classAccesses>
+        <apexClass>DeactivateUsersBatch</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <description>
+        Assign to the user who schedules or runs DeactivateUsersBatch. Grants
+        Manage
+    Users (required to set User.IsActive to false), access to the batch
+    class, and edit access to the User Deactivation Date field.
+    </description>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>User.Deactivation_Date__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Inactive User Deactivator Admin</label>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>ManageUsers</name>
+    </userPermissions>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>ViewSetup</name>
+    </userPermissions>
+</PermissionSet>

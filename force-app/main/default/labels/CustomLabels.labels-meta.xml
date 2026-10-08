@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>User_Deactivation_Notification_List</fullName>
+        <categories>User Deactivation</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>User Deactivation Notification List</shortDescription>
+        <value>admin@example.com,security@example.com</value>
+    </labels>
+</CustomLabels>

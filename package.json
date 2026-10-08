@@ -1,0 +1,24 @@
+{
+	"name": "salesforce-app",
+	"private": true,
+	"version": "1.0.0",
+	"description": "Salesforce App",
+	"scripts": {
+		"prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+		"prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+		"precommit": "lint-staged",
+		"prepare": "husky"
+	},
+	"devDependencies": {
+		"@prettier/plugin-xml": "^3.4.2",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.6.0",
+		"prettier": "^3.9.9",
+		"prettier-plugin-apex": "^2.3.0"
+	},
+	"lint-staged": {
+		"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}": [
+			"prettier --write"
+		]
+	}
+}

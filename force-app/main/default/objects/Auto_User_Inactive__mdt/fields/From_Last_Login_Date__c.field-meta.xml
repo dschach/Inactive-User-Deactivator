@@ -3,7 +3,11 @@
     <fullName>From_Last_Login_Date__c</fullName>
     <defaultValue>false</defaultValue>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>Check this checkbox if the user has to be deactivated if user has not logged in for given number of days.</inlineHelpText>
+    <inlineHelpText>
+        Check this checkbox if the user has to be deactivated if user has not
+        logged
+    in for given number of days.
+    </inlineHelpText>
     <label>From Last Login Date</label>
     <type>Checkbox</type>
 </CustomField>
