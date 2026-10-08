@@ -57,7 +57,7 @@ If you prefer to deploy using a local environment, run the following commands:
    `sf org assign permset --name Inactive_User_Deactivator_Admin --target-org your-alias`
 2. Create at least one deactivation rule and set the notification recipients (see [How to Use](#how-to-use)). Until a rule exists, the job evaluates no users.
 
-If the running user lacks Manage Users, the job cannot deactivate anyone. Each chunk is skipped and the summary email reports "Running user lacks FLS access to update User.IsActive". Assign the permission set and run the job again.
+If the running user lacks Manage Users, the job cannot deactivate anyone. The update for each user fails, nothing is deactivated, and the summary email lists each failed user with its error message under "Failures". If the running user cannot update the `User.IsActive` field at all, the whole chunk is skipped and the email reports "Running user lacks FLS access to update User.IsActive". In either case, assign the permission set and run the job again.
 
 ## How to Use
 
