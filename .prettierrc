@@ -6,7 +6,11 @@
 	"overrides": [
 		{
 			"files": "**/*.cls",
-			"options": { "parser": "apex", "apexInsertFinalNewline": false }
+			"options": {
+				"parser": "apex",
+				"apexInsertFinalNewline": false,
+				"printWidth": 120
+			}
 		},
 		{
 			"files": "*.xml",

@@ -10,29 +10,31 @@
  * @group User Management
  * @see Auto_User_Inactive__mdt
  */
-@SuppressWarnings(
-	'PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.CyclomaticComplexity'
-)
+@SuppressWarnings('PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.CyclomaticComplexity')
 public with sharing class DeactivateUsersBatch implements Database.Batchable<sObject>, Database.Stateful, Schedulable {
 	/**
 	 * @description Active rules keyed by profile name. Loaded once per job
 	 * run (in start()), not once per chunk.
 	 */
+	@TestVisible
 	private Map<String, Auto_User_Inactive__mdt> profileRulesByName;
 
 	/**
 	 * @description Stateful count of users evaluated across all chunks, for the finish() summary.
 	 */
+	@TestVisible
 	private Integer totalEvaluated = 0;
 
 	/**
 	 * @description Stateful count of users successfully deactivated across all chunks.
 	 */
+	@TestVisible
 	private Integer totalDeactivated = 0;
 
 	/**
 	 * @description Stateful list of failure messages accumulated across all chunks.
 	 */
+	@TestVisible
 	private List<String> failures = new List<String>();
 
 	/**
@@ -88,16 +90,11 @@ public with sharing class DeactivateUsersBatch implements Database.Batchable<sOb
 	 */
 	public void execute(Database.BatchableContext bc, List<sObject> scope) {
 		if (!Schema.sObjectType.User.fields.IsActive.isUpdateable()) {
-			failures.add(
-				'Running user lacks FLS access to update User.IsActive; chunk skipped.'
-			);
+			failures.add('Running user lacks FLS access to update User.IsActive; chunk skipped.');
 			return;
 		}
 
-		Id runningUserId = (System.Test.isRunningTest() &&
-			mockRunningUserId != null)
-			? mockRunningUserId
-			: RUNNING_USER_ID;
+		Id runningUserId = (System.Test.isRunningTest() && mockRunningUserId != null) ? mockRunningUserId : RUNNING_USER_ID;
 
 		List<User> usersToDeactivate = new List<User>();
 
@@ -109,20 +106,12 @@ public with sharing class DeactivateUsersBatch implements Database.Batchable<sOb
 				continue; // safety: don't deactivate the running/integration user
 			}
 
-			Auto_User_Inactive__mdt rule = profileRulesByName.get(
-				userRecord.Profile.Name
-			);
+			Auto_User_Inactive__mdt rule = profileRulesByName.get(userRecord.Profile.Name);
 			if (rule == null) {
 				continue;
 			}
 
-			if (
-				shouldDeactivate(
-					userRecord.Deactivation_Date__c,
-					userRecord.LastLoginDate,
-					rule
-				)
-			) {
+			if (shouldDeactivate(userRecord.Deactivation_Date__c, userRecord.LastLoginDate, rule)) {
 				userRecord.IsActive = false;
 				usersToDeactivate.add(userRecord);
 			}
@@ -132,19 +121,22 @@ public with sharing class DeactivateUsersBatch implements Database.Batchable<sOb
 			return;
 		}
 
-		List<Database.SaveResult> results = Database.update(
-			usersToDeactivate,
-			false
-		);
+		recordSaveResults(usersToDeactivate, Database.update(usersToDeactivate, false));
+	}
+
+	/**
+	 * @description Tallies successful deactivations and records the error
+	 * message for each user that failed to save.
+	 * @param users The users that were updated, in the same order as the results
+	 * @param results The save results returned by Database.update
+	 */
+	@TestVisible
+	private void recordSaveResults(List<User> users, List<Database.SaveResult> results) {
 		for (Integer i = 0; i < results.size(); i++) {
 			if (results[i].isSuccess()) {
 				totalDeactivated++;
 			} else {
-				failures.add(
-					usersToDeactivate[i].Id +
-						': ' +
-						results[i].getErrors()[0].getMessage()
-				);
+				failures.add(users[i].Id + ': ' + results[i].getErrors()[0].getMessage());
 			}
 		}
 	}
@@ -182,9 +174,7 @@ public with sharing class DeactivateUsersBatch implements Database.Batchable<sOb
 
 		Map<String, Auto_User_Inactive__mdt> rules = new Map<String, Auto_User_Inactive__mdt>();
 		// getAll() is keyed by DeveloperName, so re-key by Label (the profile name).
-		for (
-			Auto_User_Inactive__mdt rule : Auto_User_Inactive__mdt.getAll().values()
-		) {
+		for (Auto_User_Inactive__mdt rule : Auto_User_Inactive__mdt.getAll().values()) {
 			rules.put(rule.Label, rule);
 		}
 		return rules;
@@ -201,50 +191,44 @@ public with sharing class DeactivateUsersBatch implements Database.Batchable<sOb
 	 * @return True if the user should be deactivated
 	 */
 	@TestVisible
-	private Boolean shouldDeactivate(
-		Date deactivationDate,
-		Datetime lastLoginDate,
-		Auto_User_Inactive__mdt rule
-	) {
+	private Boolean shouldDeactivate(Date deactivationDate, Datetime lastLoginDate, Auto_User_Inactive__mdt rule) {
 		if (!rule.From_Last_Login_Date__c) {
 			return deactivationDate != null && deactivationDate < Date.today();
 		}
 
 		// Normalize sign so the rule works regardless of how the admin entered it.
-		Integer inactivityDays = rule.Number_of_Days__c != null
-			? Math.abs(rule.Number_of_Days__c.intValue())
-			: 0;
+		Integer inactivityDays = rule.Number_of_Days__c != null ? Math.abs(rule.Number_of_Days__c.intValue()) : 0;
 		Datetime cutoff = Datetime.now().addDays(-inactivityDays);
 
 		return lastLoginDate == null || lastLoginDate < cutoff;
 	}
 
 	/**
-	 * @description Emails the evaluated, deactivated and failure counts (plus
-	 * failure details) to the address in the User_Deactivation_Notification_List
-	 * label, which may hold several comma-separated addresses. Does nothing
-	 * if the label contains no addresses.
+	 * @description Splits a comma-separated list of email addresses, trimming
+	 * whitespace and dropping blank entries.
+	 * @param raw The comma-separated address list, such as the notification label value
+	 * @return The cleaned list of addresses; empty if none
 	 */
-	private void sendSummaryEmail() {
-		// TODO: replace with a real notification list (custom setting/label/queue).
+	@TestVisible
+	private static List<String> parseRecipients(String raw) {
 		List<String> recipients = new List<String>();
-		for (
-			String address : System.Label.User_Deactivation_Notification_List.split(
-				','
-			)
-		) {
+		if (String.isBlank(raw)) {
+			return recipients;
+		}
+		for (String address : raw.split(',')) {
 			if (String.isNotBlank(address)) {
 				recipients.add(address.trim());
 			}
 		}
-		if (recipients.isEmpty()) {
-			return;
-		}
+		return recipients;
+	}
 
-		Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-		mail.setToAddresses(recipients);
-		mail.setSubject('User Deactivation Batch — Summary');
-
+	/**
+	 * @description Builds the plain-text summary: counts, plus failure details if any.
+	 * @return The email body
+	 */
+	@TestVisible
+	private String buildSummaryBody() {
 		String body =
 			'Evaluated: ' +
 			totalEvaluated +
@@ -257,7 +241,25 @@ public with sharing class DeactivateUsersBatch implements Database.Batchable<sOb
 		if (!failures.isEmpty()) {
 			body += '\n\n' + String.join(failures, '\n');
 		}
-		mail.setPlainTextBody(body);
+		return body;
+	}
+
+	/**
+	 * @description Emails the evaluated, deactivated and failure counts (plus
+	 * failure details) to the address in the User_Deactivation_Notification_List
+	 * label, which may hold several comma-separated addresses. Does nothing
+	 * if the label contains no addresses.
+	 */
+	private void sendSummaryEmail() {
+		List<String> recipients = parseRecipients(System.Label.User_Deactivation_Notification_List);
+		if (recipients.isEmpty()) {
+			return;
+		}
+
+		Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+		mail.setToAddresses(recipients);
+		mail.setSubject('User Deactivation Batch — Summary');
+		mail.setPlainTextBody(buildSummaryBody());
 
 		Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ mail });
 	}

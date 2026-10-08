@@ -1,7 +1,7 @@
 {
 	"orgName": "Inactive User Deactivator",
 	"edition": "Developer",
-	"features": ["EnableSetPasswordInApi"],
+	"features": ["EnableSetPasswordInApi", "EinsteinGPTForDevelopers"],
 	"settings": {
 		"lightningExperienceSettings": {
 			"enableS1DesktopEnabled": true

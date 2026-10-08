@@ -31,7 +31,7 @@ Dormant user accounts are a security risk and waste licenses. This solution mana
 ### Prerequisites
 
 - A Salesforce org (Sandbox or Developer Edition recommended for first use).
-- The user who runs or schedules the job needs the **Manage Users** permission, which the included **Inactive User Deactivator Admin** permission set grants. A scheduled job runs as the user who scheduled it, not as whoever is logged in later.
+- The user who runs or schedules the job needs the **Manage Users** permission (and the permissions Salesforce requires with it), which the included **Inactive User Deactivator Admin** permission set grants. A scheduled job runs as the user who scheduled it, not as whoever is logged in later.
 - To deploy from the command line: the [Salesforce CLI](https://developer.salesforce.com/tools/salesforcecli) (`sf`).
 
 ### Option 1: 1-Click Install (Recommended for Admins)
